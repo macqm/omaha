@@ -514,7 +514,7 @@ HRESULT WaitForProcessExit(HANDLE process,
   DWORD local_exit_code = 0;
   if (::GetExitCodeProcess(process, &local_exit_code)) {
     CORE_LOG(L2, (_T("[process exited][PID %u][exit code 0x%08x]"),
-                  Process::GetProcessIdFromHandle(process), local_exit_code));
+                  ::GetProcessId(process), local_exit_code));
     *exit_code = local_exit_code;
   } else {
     DWORD error = ::GetLastError();

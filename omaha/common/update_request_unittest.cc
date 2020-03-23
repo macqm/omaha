@@ -61,10 +61,8 @@ TEST_F(UpdateRequestTest, HardwarePlatformAttributes) {
   EXPECT_EQ(!!IsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE),
             request.hw.has_sse);
 
-  if (SystemInfo::IsRunningOnXPOrLater()) {
-    EXPECT_EQ(!!IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE),
+  EXPECT_EQ(!!IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE),
             request.hw.has_sse2);
-  }
 
   if (SystemInfo::IsRunningOnVistaOrLater()) {
     EXPECT_EQ(!!IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE),

@@ -63,13 +63,11 @@ CString BuildMsiCommandLine(const CString& arguments,
                           kMsiSuppressAllRebootsCmdLine,
                           msi_file_path);
 
-  // The msiexec version in XP SP2 (V 3.01) and higher supports the /log switch.
-  if (SystemInfo::IsRunningOnXPSP2OrLater()) {
-    CString logfile(msi_file_path);
-    logfile.Append(_T(".log"));
+  // Append /log switch.
+  CString logfile(msi_file_path);
+  logfile.Append(_T(".log"));
 
-    SafeCStringAppendFormat(&command_line, _T(" /log \"%s\""), logfile);
-  }
+  SafeCStringAppendFormat(&command_line, _T(" /log \"%s\""), logfile);
 
   CORE_LOG(L2, (_T("[msiexec command line][%s]"), command_line));
   return command_line;

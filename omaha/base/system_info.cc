@@ -24,38 +24,6 @@
 
 namespace omaha {
 
-bool SystemInfo::IsRunningOnXPSP2OrLater() {
-  return ::IsWindowsXPSP2OrGreater();
-}
-
-bool SystemInfo::IsRunningOnXPSP3OrLater() {
-  return ::IsWindowsXPSP3OrGreater();
-}
-
-bool SystemInfo::IsRunningOnW2K() {
-  OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, {0}, 0, 0 };
-  osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_WIN2K);
-  osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_WIN2K);
-
-  const DWORD type_mask = VER_MAJORVERSION | VER_MINORVERSION;
-  ULONGLONG cond_mask =
-      ::VerSetConditionMask(0UL, VER_MAJORVERSION, VER_EQUAL);
-  cond_mask = ::VerSetConditionMask(cond_mask, VER_MINORVERSION, VER_EQUAL);
-
-  // ::VerifyVersionInfo could return FALSE due to an error other than
-  // ERROR_OLD_WIN_VERSION. We do not handle that case here.
-  return !!::VerifyVersionInfo(&osvi, type_mask, cond_mask);
-}
-
-bool SystemInfo::IsRunningOnXPOrLater() {
-  return ::IsWindowsXPOrGreater();
-}
-
-bool SystemInfo::IsRunningOnXPSP1OrLater() {
-  return ::IsWindowsXPSP1OrGreater();
-}
-
-
 bool SystemInfo::IsRunningOnVistaOrLater() {
   return ::IsWindowsVistaOrGreater();
 }

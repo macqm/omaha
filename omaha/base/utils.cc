@@ -1852,7 +1852,7 @@ bool ShellExecuteExEnsureParent(LPSHELLEXECUTEINFO shell_exec_info) {
 
     if (shell_exec_succeeded) {
       if (shell_exec_info->hProcess) {
-        DWORD pid = Process::GetProcessIdFromHandle(shell_exec_info->hProcess);
+        DWORD pid = ::GetProcessId(shell_exec_info->hProcess);
         OPT_LOG(L1, (_T("[Started process][%u]"), pid));
         if (!::AllowSetForegroundWindow(pid)) {
           UTIL_LOG(LW, (_T("[AllowSetForegroundWindow failed][%d]"),

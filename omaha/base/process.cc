@@ -19,7 +19,8 @@
 
 #include "omaha/base/process.h"
 
-#include <ntsecapi.h>
+#include <winternl.h>
+
 #include <psapi.h>
 #include <stierr.h>
 #include <tlhelp32.h>
@@ -1079,155 +1080,6 @@ HRESULT Process::GetExecutablePath(uint32 process_id, CString *exe_path) {
   return S_OK;
 }
 
-// Type definitions needed for GetCommandLine() and GetProcessIdFromHandle()
-// From MSDN document on NtQueryInformationProcess() and other sources
-typedef struct _PROCESS_BASIC_INFORMATION {
-  PVOID Reserved1;
-  BYTE *PebBaseAddress;
-  PVOID Reserved2[2];
-  ULONG_PTR UniqueProcessId;
-  PVOID Reserved3;
-} PROCESS_BASIC_INFORMATION;
-
-typedef enum _PROCESSINFOCLASS {
-  ProcessBasicInformation = 0,
-  ProcessWow64Information = 26
-} PROCESSINFOCLASS;
-
-typedef WINBASEAPI DWORD WINAPI
-GetProcessIdFn(
-    HANDLE Process
-);
-
-typedef LONG WINAPI
-NtQueryInformationProcess(
-  IN HANDLE ProcessHandle,
-  IN PROCESSINFOCLASS ProcessInformationClass,
-  OUT PVOID ProcessInformation,
-  IN ULONG ProcessInformationLength,
-  OUT PULONG ReturnLength OPTIONAL
-);
-
-typedef struct _RTL_DRIVE_LETTER_CURDIR {
-  USHORT Flags;
-  USHORT Length;
-  ULONG TimeStamp;
-  UNICODE_STRING DosPath;
-} RTL_DRIVE_LETTER_CURDIR, *PRTL_DRIVE_LETTER_CURDIR;
-
-typedef struct _RTL_USER_PROCESS_PARAMETERS {
-  ULONG MaximumLength;
-  ULONG Length;
-  ULONG Flags;
-  ULONG DebugFlags;
-  PVOID ConsoleHandle;
-  ULONG ConsoleFlags;
-  HANDLE StdInputHandle;
-  HANDLE StdOutputHandle;
-  HANDLE StdErrorHandle;
-  UNICODE_STRING CurrentDirectoryPath;
-  HANDLE CurrentDirectoryHandle;
-  UNICODE_STRING DllPath;
-  UNICODE_STRING ImagePathName;
-  UNICODE_STRING CommandLine;
-  PVOID Environment;
-  ULONG StartingPositionLeft;
-  ULONG StartingPositionTop;
-  ULONG Width;
-  ULONG Height;
-  ULONG CharWidth;
-  ULONG CharHeight;
-  ULONG ConsoleTextAttributes;
-  ULONG WindowFlags;
-  ULONG ShowWindowFlags;
-  UNICODE_STRING WindowTitle;
-  UNICODE_STRING DesktopName;
-  UNICODE_STRING ShellInfo;
-  UNICODE_STRING RuntimeData;
-  RTL_DRIVE_LETTER_CURDIR DLCurrentDirectory[0x20];
-} RTL_USER_PROCESS_PARAMETERS, *PRTL_USER_PROCESS_PARAMETERS;
-
-// Get the function pointer to GetProcessId in KERNEL32.DLL
-static HRESULT EnsureGPIFunction(GetProcessIdFn** gpi_func_ptr) {
-  static GetProcessIdFn* gpi_func = NULL;
-  if (!gpi_func) {
-    HMODULE kernel32_module = ::GetModuleHandle(_T("kernel32.dll"));
-    if (!kernel32_module) {
-      return HRESULTFromLastError();
-    }
-    gpi_func = reinterpret_cast<GetProcessIdFn*>(
-                  ::GetProcAddress(kernel32_module, "GetProcessId"));
-    if (!gpi_func) {
-      return HRESULTFromLastError();
-    }
-  }
-
-  *gpi_func_ptr = gpi_func;
-  return S_OK;
-}
-
-// Get the function pointer to NtQueryInformationProcess in NTDLL.DLL
-static HRESULT EnsureQIPFunction(NtQueryInformationProcess** qip_func_ptr) {
-  static NtQueryInformationProcess* qip_func = NULL;
-  if (!qip_func) {
-    HMODULE ntdll_module = ::GetModuleHandle(_T("ntdll.dll"));
-    if (!ntdll_module) {
-      return HRESULTFromLastError();
-    }
-    qip_func = reinterpret_cast<NtQueryInformationProcess*>(
-                  ::GetProcAddress(ntdll_module, "NtQueryInformationProcess"));
-    if (!qip_func) {
-      return HRESULTFromLastError();
-    }
-  }
-
-  *qip_func_ptr = qip_func;
-  return S_OK;
-}
-
-// Obtain the process ID from a hProcess HANDLE
-ULONG Process::GetProcessIdFromHandle(HANDLE hProcess) {
-  if (SystemInfo::IsRunningOnXPSP1OrLater()) {
-    // Thunk to the documented ::GetProcessId() API
-    GetProcessIdFn* gpi_func = NULL;
-    HRESULT hr = EnsureGPIFunction(&gpi_func);
-    if (FAILED(hr)) {
-      ASSERT(FALSE,
-             (_T("Process::GetProcessIdFromHandle - EnsureGPIFunction")
-              _T(" failed[0x%x]"), hr));
-      return 0;
-    }
-    ASSERT1(gpi_func);
-    return gpi_func(hProcess);
-  }
-
-  // For lower versions of Windows, we use undocumented
-  // function NtQueryInformationProcess to get at the PID
-  NtQueryInformationProcess* qip_func = NULL;
-  HRESULT hr = EnsureQIPFunction(&qip_func);
-  if (FAILED(hr)) {
-    ASSERT(FALSE,
-           (_T("Process::GetProcessIdFromHandle - EnsureQIPFunction")
-            _T(" failed[0x%x]"), hr));
-    return 0;
-  }
-  ASSERT1(qip_func);
-
-  PROCESS_BASIC_INFORMATION info;
-  SetZero(info);
-  if (!NT_SUCCESS(qip_func(hProcess,
-                           ProcessBasicInformation,
-                           &info,
-                           sizeof(info),
-                           NULL))) {
-    ASSERT(FALSE, (_T("Process::GetProcessIdFromHandle - ")
-                   _T("NtQueryInformationProcess failed!")));
-    return 0;
-  }
-
-  return static_cast<ULONG>(info.UniqueProcessId);
-}
-
 // Get the command line of a process
 HRESULT Process::GetCommandLine(uint32 process_id, CString* cmd_line) {
   ASSERT1(process_id);
@@ -1235,33 +1087,32 @@ HRESULT Process::GetCommandLine(uint32 process_id, CString* cmd_line) {
 
   // Open the process
   scoped_process process_handle(::OpenProcess(
-                                    PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                    false,
-                                    process_id));
+      PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, process_id));
   if (!process_handle) {
     return HRESULTFromLastError();
   }
 
+  HMODULE module = GetModuleHandle(_T("ntdll.dll"));
+  if (!module)
+    return HRESULT_FROM_WIN32(::GetLastError());
+
+  using NtQueryInformationProcessType = decltype(::NtQueryInformationProcess);
+  NtQueryInformationProcessType* nt_query_informaton_type =
+      reinterpret_cast<NtQueryInformationProcessType*>(
+          ::GetProcAddress(module, "NtQueryInformationProcess"));
+
+  if (!nt_query_informaton_type)
+    return HRESULT_FROM_WIN32(::GetLastError());
+
   // Obtain Process Environment Block
-  // Note that NtQueryInformationProcess is not available in Windows 95/98/ME
-  NtQueryInformationProcess* qip_func = NULL;
-  HRESULT hr = EnsureQIPFunction(&qip_func);
-
-  if (FAILED(hr)) {
-    return hr;
-  }
-  ASSERT1(qip_func);
-
   PROCESS_BASIC_INFORMATION info;
   SetZero(info);
-  if (!NT_SUCCESS(qip_func(get(process_handle),
-                           ProcessBasicInformation,
-                           &info,
-                           sizeof(info),
-                           NULL))) {
+  if (!NT_SUCCESS(nt_query_informaton_type(get(process_handle),
+                                           ProcessBasicInformation, &info,
+                                           sizeof(info), NULL))) {
     return E_FAIL;
   }
-  BYTE* peb = info.PebBaseAddress;
+  BYTE* peb = reinterpret_cast<BYTE*>(info.PebBaseAddress);
 
   // Read address of parameters (see some PEB reference)
   // TODO(omaha): use offsetof(PEB, ProcessParameters) to replace 0x10

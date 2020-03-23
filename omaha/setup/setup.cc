@@ -842,9 +842,9 @@ HRESULT Setup::WaitForOtherInstancesToExit(const Pids& pids,
                     _T("WaitForMultipleObjects returned.]")));
       for (size_t i = 0; i < handles.size(); ++i) {
         if (WAIT_TIMEOUT == ::WaitForSingleObject(handles[i], 0)) {
-          uint32 pid = Process::GetProcessIdFromHandle(handles[i]);
+          uint32 pid = ::GetProcessId(handles[i]);
           if (!pid) {
-            SETUP_LOG(LW, (_T(" [Process::GetProcessIdFromHandle failed][%u]"),
+            SETUP_LOG(LW, (_T(" [GetProcessId failed][%u]"),
                           ::GetLastError()));
             SETUP_LOG(L2, (_T(" [Process did not exit][unknown]")));
             continue;
@@ -868,7 +868,7 @@ HRESULT Setup::WaitForOtherInstancesToExit(const Pids& pids,
   } else {
     for (size_t i = 0; i < handles.size(); ++i) {
       if (!::TerminateProcess(handles[i], UINT_MAX)) {
-        const uint32 pid = Process::GetProcessIdFromHandle(handles[i]);
+        const uint32 pid = ::GetProcessId(handles[i]);
         const DWORD error = ::GetLastError();
         SETUP_LOG(LW, (_T("[::TerminateProcess failed][%u][%u]"), pid, error));
       }

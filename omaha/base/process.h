@@ -194,9 +194,6 @@ class Process {
                                      const TCHAR* search_name,
                                      bool search_main_executable_only);
 
-  // Obtain the process ID from a hProcess HANDLE.
-  static ULONG GetProcessIdFromHandle(HANDLE hProcess);
-
   // Get the fully qualified path of the executable file for a process.
   static HRESULT GetExecutablePath(uint32 process_id, CString *exe_path);
 

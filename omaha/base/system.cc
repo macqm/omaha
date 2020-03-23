@@ -425,29 +425,27 @@ HRESULT System::ShellExecuteProcess(const TCHAR* file_name_to_execute,
 }
 
 uint32 System::GetProcessHandleCount() {
-  typedef LONG (CALLBACK *Fun)(HANDLE, int32, PVOID, ULONG, PULONG);
+  using NtQueryFun = decltype(&::NtQueryInformationProcess);
 
   // This new version of getting the number of open handles works on win2k.
-  HMODULE module = GetModuleHandle(_T("ntdll.dll"));
-  if (!module) {
+  HMODULE module = GetModuleHandle(L"ntdll.dll");
+  if (!module)
     return 0;
-  }
-  Fun NtQueryInformationProcess =
-      reinterpret_cast<Fun>(::GetProcAddress(module,
-                                             "NtQueryInformationProcess"));
 
-  if (!NtQueryInformationProcess) {
-    UTIL_LOG(LEVEL_ERROR, (_T("[NtQueryInformationProcess failed][0x%x]"),
-                           HRESULTFromLastError()));
+  NtQueryFun nt_query_information_proc = reinterpret_cast<NtQueryFun>(
+      ::GetProcAddress(module, "NtQueryInformationProcess"));
+
+  if (!nt_query_information_proc) {
+    UTIL_LOG(LEVEL_ERROR, (L"[NtQueryInformationProcess failed][0x%x]",
+             HRESULTFromLastError()));
     return 0;
   }
 
   DWORD count = 0;
-  VERIFY(NtQueryInformationProcess(GetCurrentProcess(),
-                                   kProcessHandleCount,
-                                   &count,
-                                   sizeof(count),
-                                   NULL) >= 0, (L""));
+  NTSTATUS status = nt_query_information_proc(
+      GetCurrentProcess(), static_cast<PROCESSINFOCLASS>(kProcessHandleCount),
+      &count, sizeof(count), NULL);
+  VERIFY1(NT_SUCCESS(status));
   return count;
 }
 

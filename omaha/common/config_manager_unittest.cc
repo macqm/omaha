@@ -1944,12 +1944,6 @@ TEST_P(ConfigManagerTest, GetDir) {
 }
 
 TEST_P(ConfigManagerTest, GetUpdateWorkerStartUpDelayMs_Repeated) {
-  if (!SystemInfo::IsRunningOnXPOrLater()) {
-    std::wcout << _T("\tTest did not run because GenRandom breaks on Windows ")
-               << _T("2000 if the registry keys are overridden.") << std::endl;
-    return;
-  }
-
   // Test the UpdateDelay multiple times.
   for (int i = 0; i < 10; ++i) {
     int random = cm_->GetUpdateWorkerStartUpDelayMs();
@@ -1959,12 +1953,6 @@ TEST_P(ConfigManagerTest, GetUpdateWorkerStartUpDelayMs_Repeated) {
 }
 
 TEST_P(ConfigManagerTest, GetUpdateWorkerStartUpDelayMs) {
-  if (!SystemInfo::IsRunningOnXPOrLater()) {
-    std::wcout << _T("\tTest did not run because GenRandom breaks on Windows ")
-               << _T("2000 if the registry keys are overridden.") << std::endl;
-    return;
-  }
-
   int random = cm_->GetUpdateWorkerStartUpDelayMs();
   EXPECT_GE(random, kUpdateTimerStartupDelayMinMs);
   EXPECT_LE(random, kUpdateTimerStartupDelayMaxMs);

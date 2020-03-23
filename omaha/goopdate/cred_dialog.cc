@@ -107,7 +107,7 @@ DWORD CredentialDialogBase::DisplayDialog(
   CredUIPromptForCredentialsW_type CredUIPromptForCredentialsW_fn =
       reinterpret_cast<CredUIPromptForCredentialsW_type>(
           GetProcAddress(get(credui_lib), "CredUIPromptForCredentialsW"));
-  ASSERT1(CredUIPromptForCredentialsW_fn || SystemInfo::IsRunningOnW2K());
+  ASSERT1(CredUIPromptForCredentialsW_fn);
   if (!CredUIPromptForCredentialsW_fn) {
     CORE_LOG(L3, (_T("[CredUIPromptForCredentialsW not available]")));
     return ERROR_NOT_READY;

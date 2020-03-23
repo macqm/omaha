@@ -605,8 +605,8 @@ class MetaInstaller {
 };
 
 HRESULT CheckOSRequirements() {
-  return SystemInfo::OSWin2KSP4OrLater() ? S_OK :
-                                           GOOPDATE_E_RUNNING_INFERIOR_WINDOWS;
+  return ::IsWindowsVistaOrGreater() ? S_OK
+                                     : GOOPDATE_E_RUNNING_INFERIOR_WINDOWS;
 }
 
 CString GetCompanyDisplayName() {

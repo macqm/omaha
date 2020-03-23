@@ -274,14 +274,14 @@ bool ProxyAuth::ReadFromIE7(const CString& server) {
   CredEnumerateW_type CredEnumerateW_fn =
       reinterpret_cast<CredEnumerateW_type>(
           GetProcAddress(get(advapi_lib), "CredEnumerateW"));
-  ASSERT1(CredEnumerateW_fn || SystemInfo::IsRunningOnW2K());
+  ASSERT1(CredEnumerateW_fn);
   if (!CredEnumerateW_fn)
     return false;
 
   typedef VOID (__stdcall *CredFree_type)(PVOID);
   CredFree_type CredFree_fn = reinterpret_cast<CredFree_type>(
       GetProcAddress(get(advapi_lib), "CredFree"));
-  ASSERT1(CredFree_fn || SystemInfo::IsRunningOnW2K());
+  ASSERT1(CredFree_fn);
   if (!CredFree_fn)
     return false;
 

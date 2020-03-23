@@ -30,30 +30,6 @@ namespace omaha {
 // TODO(omaha): refactor to use a namespace.
 class SystemInfo {
  public:
-  // Find out if the OS is at least Windows 2000
-  // Service pack 4. If OS version is less than that
-  // will return false, all other cases true.
-  static bool OSWin2KSP4OrLater() {
-    return ::IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WIN2K),
-                                       LOBYTE(_WIN32_WINNT_WIN2K),
-                                       4);
-  }
-
-  // Returns true if the OS is at least XP SP2.
-  static bool IsRunningOnXPSP2OrLater();
-
-  // Returns true if the OS is at least XP SP3.
-  static bool IsRunningOnXPSP3OrLater();
-
-  // Returns true if the current operating system is Windows 2000.
-  static bool IsRunningOnW2K();
-
-  // Are we running on Windows XP or later.
-  static bool IsRunningOnXPOrLater();
-
-  // Are we running on Windows XP SP1 or later.
-  static bool IsRunningOnXPSP1OrLater();
-
   // Are we running on Windows Vista or later.
   static bool IsRunningOnVistaOrLater();
 

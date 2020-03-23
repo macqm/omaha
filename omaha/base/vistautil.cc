@@ -344,10 +344,10 @@ HRESULT RunElevated(const TCHAR* file_path,
     WaitForSingleObject(get(process), INFINITE);
     VERIFY1(GetExitCodeProcess(get(process), exit_code));
     UTIL_LOG(L1, (_T("[Elevated process exited][PID: %u][exit code: %u]"),
-                  Process::GetProcessIdFromHandle(get(process)), *exit_code));
+                 ::GetProcessId(get(process)), *exit_code));
   } else {
     UTIL_LOG(L1, (_T("[Elevated process exited][PID: %u]"),
-                  Process::GetProcessIdFromHandle(get(process))));
+                 ::GetProcessId(get(process))));
   }
 
   return S_OK;
