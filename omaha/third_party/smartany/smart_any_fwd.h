@@ -1018,11 +1018,13 @@ typedef close_fun<pfn_free_t,static_cast<pfn_free_t>(&free)>                clos
 
 #if defined(_OBJBASE_H_) & !defined(SMART_ANY_CO_INIT)
 # define SMART_ANY_CO_INIT
-  inline HRESULT smart_co_init_helper( DWORD dwCoInit )
+  inline HRESULT smart_co_init_helper( DWORD dwtt )
   {
       (void) dwCoInit;
 #     if (_WIN32_WINNT >= 0x0400 ) | defined(_WIN32_DCOM)
-          return ::CoInitializeEx(0,dwCoInit);
+          // COINIT_DISABLE_OLE1DDE is always added based on:
+          // https://docs.microsoft.com/en-us/windows/desktop/learnwin32/initializing-the-com-library
+          return ::CoInitializeEx(0, dwCoInit | COINIT_DISABLE_OLE1DDE);
 #     else
           return ::CoInitialize(0);
 #     endif
